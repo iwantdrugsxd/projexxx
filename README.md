@@ -61,11 +61,27 @@ This project is configured for Vercel deployment:
 - **Root Directory**: `frontend`
 
 ### Environment Variables
-Make sure to set these environment variables in Vercel:
 
-- `REACT_APP_API_BASE_URL`: Your backend API URL
-- `REACT_APP_CLOUDINARY_CLOUD_NAME`: Cloudinary cloud name
-- `REACT_APP_CLOUDINARY_UPLOAD_PRESET`: Cloudinary upload preset
+#### Vercel (Frontend) Environment Variables
+Set these in your Vercel project settings → Environment Variables:
+
+- `REACT_APP_API_BASE_URL`: `https://projexxx-production.up.railway.app/api` (⚠️ **Must include `/api` at the end!**)
+- `REACT_APP_CLOUDINARY_CLOUD_NAME`: Your Cloudinary cloud name
+- `REACT_APP_CLOUDINARY_UPLOAD_PRESET`: Your Cloudinary upload preset
+
+**Important**: After adding/changing environment variables in Vercel, you **must redeploy** your project for changes to take effect.
+
+#### Railway (Backend) Environment Variables
+Set these in your Railway project settings → Variables:
+
+- `MONGODB_URI`: Your MongoDB connection string
+- `JWT_SECRET`: Your JWT secret key
+- `FRONTEND_URL`: `https://projexxx-ajah.vercel.app` (Your Vercel frontend URL)
+- `CLOUDINARY_CLOUD_NAME`: Your Cloudinary cloud name
+- `CLOUDINARY_API_KEY`: Your Cloudinary API key
+- `CLOUDINARY_API_SECRET`: Your Cloudinary API secret
+- `PORT`: `5001` (or let Railway auto-assign)
+- `NODE_ENV`: `production`
 
 ## 🏃‍♂️ Quick Start
 

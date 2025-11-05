@@ -127,7 +127,10 @@ const corsOptions = {
       'https://localhost:3001',
       process.env.FRONTEND_URL,
       process.env.CLIENT_URL,
-      process.env.REACT_APP_URL
+      process.env.REACT_APP_URL,
+      // Explicitly allow Vercel deployments
+      'https://projexxx-ajah.vercel.app',
+      'https://projexx-ajah.vercel.app'
     ].filter(Boolean);
     
     console.log(`🔍 CORS Check - Origin: ${origin || 'No Origin'}`);
@@ -138,8 +141,15 @@ const corsOptions = {
       return callback(null, true);
     }
     
+    // Check if origin is in allowed list
     if (allowedOrigins.includes(origin)) {
       console.log('✅ CORS - Origin allowed:', origin);
+      return callback(null, true);
+    }
+    
+    // Allow any Vercel deployment (for flexibility)
+    if (origin && origin.includes('.vercel.app')) {
+      console.log('✅ CORS - Vercel deployment allowed:', origin);
       return callback(null, true);
     }
     

@@ -16,14 +16,38 @@ function LoginPage() {
 
     try {
       const endpoint = userType === 'faculty' ? 'faculty' : 'student';
-      const response = await fetch(`${API_BASE}/${endpoint}/login`, {
+      const loginUrl = `${API_BASE}/${endpoint}/login`;
+      
+      console.log('🔐 Attempting login:', {
+        endpoint,
+        url: loginUrl,
+        apiBase: API_BASE,
+        userType
+      });
+
+      const response = await fetch(loginUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(formData)
       });
 
-      const data = await response.json();
+      console.log('📡 Login response status:', response.status, response.statusText);
+
+      // Handle non-JSON responses
+      let data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error('❌ Non-JSON response:', text);
+        setError(`Server error: ${response.status} ${response.statusText}`);
+        setLoading(false);
+        return;
+      }
+
+      console.log('📦 Login response data:', data);
       
       if (response.ok) {
         const userData = { ...data[userType], role: userType };
@@ -41,10 +65,19 @@ function LoginPage() {
         setUser(userData);
         setCurrentView('dashboard');
       } else {
-        setError(data.message);
+        setError(data.message || `Login failed: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
-      setError('Login failed. Please try again.');
+      console.error('❌ Login error:', error);
+      
+      // Provide more specific error messages
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        setError(`Cannot connect to server. Please check if ${API_BASE} is accessible.`);
+      } else if (error.message.includes('CORS')) {
+        setError('CORS error: Server configuration issue. Please contact support.');
+      } else {
+        setError(`Login failed: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }
