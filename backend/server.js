@@ -185,10 +185,56 @@ const corsOptions = {
   maxAge: 86400 // 24 hours
 };
 
+// Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Handle preflight requests explicitly
-app.options('*', cors(corsOptions));
+// Fallback CORS headers - ensures CORS headers are always set
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Allow Vercel domains and configured frontend URLs
+  if (!origin || 
+      origin.includes('.vercel.app') || 
+      origin === process.env.FRONTEND_URL ||
+      origin === process.env.CLIENT_URL ||
+      origin === process.env.REACT_APP_URL ||
+      origin.includes('localhost')) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  next();
+});
+
+// Handle preflight requests explicitly - CRITICAL for CORS
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  console.log(`🔍 OPTIONS Preflight Request from: ${origin || 'No Origin'}`);
+  
+  // Check if origin should be allowed
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'https://projexxx-ajah.vercel.app',
+    process.env.FRONTEND_URL,
+    process.env.CLIENT_URL,
+    process.env.REACT_APP_URL
+  ].filter(Boolean);
+  
+  if (!origin || allowedOrigins.includes(origin) || origin.includes('.vercel.app')) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, X-CSRF-Token');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400');
+    console.log(`✅ OPTIONS Preflight - Allowed origin: ${origin}`);
+    return res.status(200).end();
+  }
+  
+  console.log(`❌ OPTIONS Preflight - Blocked origin: ${origin}`);
+  res.status(403).json({ error: 'Not allowed by CORS' });
+});
 
 // ==============================================
 // RATE LIMITING - PRODUCTION SAFE
