@@ -453,8 +453,17 @@ const connectDB = async () => {
     });
 
     console.log("✅ Connected to MongoDB successfully");
-    console.log(`📊 Database: ${conn.connection.db.databaseName}`);
-    console.log(`🌐 Host: ${conn.connection.host}:${conn.connection.port}`);
+    
+    // Safely access database name - wait for connection to be ready
+    const dbName = mongoose.connection.db?.databaseName || 
+                   mongoose.connection.name || 
+                   MONGO_URI.split('/').pop()?.split('?')[0] || 
+                   'Unknown';
+    const host = mongoose.connection.host || 'Unknown';
+    const port = mongoose.connection.port || 'Unknown';
+    
+    console.log(`📊 Database: ${dbName}`);
+    console.log(`🌐 Host: ${host}:${port}`);
     
     return true;
   } catch (error) {
