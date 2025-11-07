@@ -241,27 +241,25 @@ app.options('*', (req, res) => {
 // ==============================================
 
 // Middleware to check if database is connected (for routes that need it)
+// Since bufferCommands is enabled, Mongoose will queue operations automatically
+// This middleware only logs warnings but allows requests through
 const checkDatabaseConnection = (req, res, next) => {
   // Skip check for health endpoint
   if (req.path === '/health' || req.path === '/api/health') {
     return next();
   }
   
-  // Check if MongoDB is connected
+  // Log warning if database is not connected, but allow request through
+  // Mongoose with bufferCommands will queue the operation until connection is ready
   if (mongoose.connection.readyState !== 1) {
-    console.warn(`⚠️  Database not connected - Request to ${req.path} blocked`);
-    return res.status(503).json({
-      success: false,
-      message: 'Database service temporarily unavailable. Please try again in a moment.',
-      error: 'DATABASE_NOT_CONNECTED',
-      retryAfter: 5
-    });
+    console.warn(`⚠️  Database not connected - Request to ${req.path} will be queued by Mongoose`);
+    // Don't block - let Mongoose handle queuing with bufferCommands
   }
   
   next();
 };
 
-// Apply database check to all API routes except health
+// Apply database check to all API routes except health (non-blocking)
 app.use('/api', checkDatabaseConnection);
 
 // ==============================================
@@ -477,8 +475,7 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
       family: 4,
-      bufferCommands: true, // Enable buffering so commands queue until connection is ready
-      bufferMaxEntries: 0 // Unlimited buffering
+      bufferCommands: true // Enable buffering so commands queue until connection is ready
     });
 
     console.log("✅ Connected to MongoDB successfully");
