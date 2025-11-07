@@ -237,6 +237,34 @@ app.options('*', (req, res) => {
 });
 
 // ==============================================
+// DATABASE CONNECTION CHECK MIDDLEWARE
+// ==============================================
+
+// Middleware to check if database is connected (for routes that need it)
+const checkDatabaseConnection = (req, res, next) => {
+  // Skip check for health endpoint
+  if (req.path === '/health' || req.path === '/api/health') {
+    return next();
+  }
+  
+  // Check if MongoDB is connected
+  if (mongoose.connection.readyState !== 1) {
+    console.warn(`⚠️  Database not connected - Request to ${req.path} blocked`);
+    return res.status(503).json({
+      success: false,
+      message: 'Database service temporarily unavailable. Please try again in a moment.',
+      error: 'DATABASE_NOT_CONNECTED',
+      retryAfter: 5
+    });
+  }
+  
+  next();
+};
+
+// Apply database check to all API routes except health
+app.use('/api', checkDatabaseConnection);
+
+// ==============================================
 // RATE LIMITING - PRODUCTION SAFE
 // ==============================================
 
@@ -449,7 +477,8 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
       family: 4,
-      bufferCommands: false
+      bufferCommands: true, // Enable buffering so commands queue until connection is ready
+      bufferMaxEntries: 0 // Unlimited buffering
     });
 
     console.log("✅ Connected to MongoDB successfully");
